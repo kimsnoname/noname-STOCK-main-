@@ -4,18 +4,21 @@ package com.example.demo.controller;
 import java.util.List;
 import java.util.Map;
 
+import com.example.demo.dto.AuthenticationRequest;
+import com.example.demo.dto.AuthenticationResponse;
+import com.example.demo.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import com.example.demo.model.User;
+import com.example.demo.model.UserCreateForm;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.example.demo.model.User;
-import com.example.demo.model.UserCreateForm;
-import com.example.demo.service.UserService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,13 @@ public class UserController {
     public ResponseEntity<List<User>> getAllTestEntities() {
         List<User> result = userService.getAllTestEntities();
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthenticationResponse> authenticate(
+            @RequestBody AuthenticationRequest request
+    ) {
+        return ResponseEntity.ok(userService.authenticate(request));
     }
 
     @GetMapping("/hello")

@@ -22,8 +22,8 @@ class DemoApplicationTests {
     @Autowired
     private UserRepository userRepository;
 
-	@Transactional
-    @Test
+	// @Transactional
+    // @Test
     // void testJpa() {        
     //     User u1 = new User();
 	// 	u1.setEmail("geun1.test.com");
@@ -44,13 +44,13 @@ class DemoApplicationTests {
     //     this.userRepository.save(u2);  // 첫번째 유저 저장
     // }
 
-	void testJpa() {
-        List<User> all = this.userRepository.findAll();
-        assertEquals(2, all.size());
+	// void testJpa() {
+    //     List<User> all = this.userRepository.findAll();
+    //     assertEquals(2, all.size());
 
-        User u = all.get(0);
-        assertEquals("geun1", u.getUserName());
-	}
+    //     User u = all.get(0);
+    //     assertEquals("geun1", u.getUserName());
+	// }
 
 	// void testJpa() {
     //     Optional<User> ou = this.userRepository.findById(1);

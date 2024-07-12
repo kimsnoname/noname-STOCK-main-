@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -42,11 +43,12 @@ public class UserAccountController {
     public ResponseEntity<UserAccount> createAccount(@RequestParam("email") String email, @RequestBody AccountPassword accountPassword) {
         try {
             // 사용자 정보 조회
-            User user = userRepository.findByEmail(email);
-            if (user == null) {
+            Optional<User> userOptional = userRepository.findByEmail(email);
+            if (!userOptional.isPresent()) {
                 return ResponseEntity.notFound().build(); // 사용자가 존재하지 않으면 404 반환
             }
-
+            User user = userOptional.get();
+            
             // 계좌 정보 설정
             UserAccount userAccount = new UserAccount();
             userAccount.setUserId(user.getUser_id());
