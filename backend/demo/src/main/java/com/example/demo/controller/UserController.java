@@ -1,24 +1,25 @@
 package com.example.demo.controller;
 
-// import org.hibernate.mapping.Map;
 import java.util.List;
 import java.util.Map;
 
-import com.example.demo.dto.AuthenticationRequest;
-import com.example.demo.dto.AuthenticationResponse;
-import com.example.demo.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import com.example.demo.model.User;
-import com.example.demo.model.UserCreateForm;
-
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.dto.AuthenticationRequest;
+import com.example.demo.dto.AuthenticationResponse;
+import com.example.demo.model.User;
+import com.example.demo.model.UserCreateForm;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.service.JwtService;
+import com.example.demo.service.UserService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<Object> saveUser(@RequestBody @Valid UserCreateForm userCreateForm) {
@@ -50,6 +53,7 @@ public class UserController {
         return ResponseEntity.ok(userService.authenticate(request));
     }
 
+
     @GetMapping("/hello")
     public ResponseEntity<Object> testApi() {
         String result = "API 통신에 성공하였습니다.";
@@ -70,5 +74,17 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity<User> getUserInfo(@RequestHeader("Authorization") String token) {
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        String userEmail = jwtService.extractUsername(token);
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
+        return ResponseEntity.ok(user);
     }
 }

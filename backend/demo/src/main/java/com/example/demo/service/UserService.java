@@ -70,6 +70,7 @@ public class UserService {
         String jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
+                .userName(user.getUsername())
                 .build();
     }
 }

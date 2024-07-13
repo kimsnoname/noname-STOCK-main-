@@ -54,7 +54,7 @@ public class UserAccountController {
             userAccount.setUserId(user.getUser_id());
             userAccount.setAccountPassword(accountPassword.getAccountPassword());
             userAccount.setAccountNumber(generateRandomAccountNumber());
-            userAccount.setBalance(0);
+            userAccount.setBalance(30000000);
 
             // 계좌 생성 서비스 호출
             UserAccount createdAccount = userAccountService.createAccount(user.getUser_id(), userAccount);

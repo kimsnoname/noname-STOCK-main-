@@ -1,18 +1,29 @@
 package com.example.demo.model;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Collection;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import jakarta.persistence.*;
+import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -83,6 +94,10 @@ public class User implements UserDetails{
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public String getUserName() {
+        return this.userName; // userName 필드를 반환하도록 수정
     }
 
     // public User() {
