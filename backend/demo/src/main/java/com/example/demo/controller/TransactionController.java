@@ -33,8 +33,8 @@ public class TransactionController {
     private UserRepository userRepository;
 
     @PostMapping("/buy")
-    public ResponseEntity<?> handleStock(@RequestHeader("Authorization") String token,
-                                         @Valid @RequestBody TransactionEntity transactionEntity) {
+    public ResponseEntity<?> handleBuyStock(@RequestHeader("Authorization") String token,
+                                            @Valid @RequestBody TransactionEntity transactionEntity) {
         try {
             // Bearer token prefix 제거
             String jwt = token.substring(7);
@@ -49,7 +49,38 @@ public class TransactionController {
                     user.getUser_id(),
                     transactionEntity.getStockCode(),
                     transactionEntity.getPrice(),
-                    transactionEntity.getQuantity()
+                    transactionEntity.getQuantity(),
+                    transactionEntity.getProductName()
+                );
+
+                return new ResponseEntity<>(transaction, HttpStatus.CREATED);
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PostMapping("/sell")
+    public ResponseEntity<?> handleSellStock(@RequestHeader("Authorization") String token,
+                                             @Valid @RequestBody TransactionEntity transactionEntity) {
+        try {
+            // Bearer token prefix 제거
+            String jwt = token.substring(7);
+            String userEmail = jwtService.extractUsername(jwt);
+            User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
+
+            // 토큰이 유효한지 검증
+            if (jwtService.isTokenValid(jwt, user)) {
+                // Transaction 삭제
+                Transaction transaction = transactionService.deleteTransaction(
+                    user.getUser_id(),
+                    transactionEntity.getStockCode(),
+                    transactionEntity.getPrice(),
+                    transactionEntity.getQuantity(),
+                    transactionEntity.getProductName()
                 );
 
                 return new ResponseEntity<>(transaction, HttpStatus.CREATED);
@@ -67,6 +98,7 @@ class TransactionEntity {
     private String stockCode;
     private Long price;
     private int quantity;
+    private String productName;
 
     public Long getUserId() {
         return userId;
@@ -94,5 +126,12 @@ class TransactionEntity {
     }
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 }

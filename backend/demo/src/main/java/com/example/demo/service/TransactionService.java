@@ -23,18 +23,45 @@ public class TransactionService {
     @Autowired
     private UserAccountService userAccountService;
 
+    //매수할 때
     @Transactional
-    public Transaction createTransaction(Long userId, String stockCode, Long price, int quantity)throws Exception{
+    public Transaction createTransaction(Long userId, String stockCode, Long price, int quantity, String productName)throws Exception{
         // 사용자 계좌에서 금액 차감 및 검증 로직 추가
         Long amount = price * quantity; // 거래 금액
         userAccountService.deductAmount(userId, amount);        // 수정 필요
+        //userAccountService.addStock(userId, stockCode, quantity);
 
         Transaction transaction = new Transaction();
         transaction.setUserId(userId);
         transaction.setStockCode(stockCode);
         transaction.setPrice(price);
         transaction.setQuantity(quantity);
+        transaction.setStockName(productName);
         transaction.setTimestamp(LocalDateTime.now());
+        transaction.setTradeType("buy");
+
+        return transactionRepository.save(transaction);
+    }
+
+    // 매도할 때
+    @Transactional
+    public Transaction deleteTransaction(Long userId, String stockCode, Long price, int quantity, String productName)throws Exception{
+        // 사용자 계좌에서 금액 차감 및 검증 로직 추가
+        Long amount = price * quantity; // 거래 금액
+        userAccountService.addAmount(userId, amount); // 금액 추가
+
+        // 주식 보유 수량 업데이트 로직 추가 필요
+        //userAccountService.deductStock(userId, stockCode, quantity);
+
+        Transaction transaction = new Transaction();
+        transaction.setUserId(userId);
+        transaction.setStockCode(stockCode);
+        transaction.setPrice(price);
+        transaction.setQuantity(quantity);
+        transaction.setStockName(productName);
+        transaction.setTimestamp(LocalDateTime.now());
+        transaction.setTradeType("sell");
+
 
         return transactionRepository.save(transaction);
     }

@@ -1,11 +1,11 @@
 package com.example.demo.service;
 
+import org.springframework.stereotype.Service;
+
 import com.example.demo.model.UserAccount;
 import com.example.demo.repository.UserAccountRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
@@ -18,7 +18,7 @@ public class UserAccountService {
         return userAccountRepository.save(userAccount);
     }
 
-    @Transactional
+    //@Transactional
     public void deductAmount(Long userId, Long amount) throws Exception {
         UserAccount userAccount = userAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new Exception("User not found"));
@@ -28,6 +28,20 @@ public class UserAccountService {
         }
 
         userAccount.setBalance(userAccount.getBalance() - amount.intValue());
+        userAccountRepository.save(userAccount);
+    }
+
+    //@Transactional
+    public void addAmount(Long userId, Long amount) throws Exception {
+        UserAccount userAccount = userAccountRepository.findByUserId(userId)
+                .orElseThrow(() -> new Exception("User not found"));
+
+        //예외처리 수정하기        
+        if (userAccount.getBalance() < amount) {
+            throw new Exception("Insufficient balance");
+        }
+
+        userAccount.setBalance(userAccount.getBalance() + amount.intValue());
         userAccountRepository.save(userAccount);
     }
 }

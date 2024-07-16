@@ -17,7 +17,7 @@ const CandlestickChart = ({ stockCode, width }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/stock_data?code=${stockCode}`);
+        const response = await fetch(`http://localhost:5002/api/stock_data?code=${stockCode}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }

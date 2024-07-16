@@ -37,6 +37,7 @@ interface TradeEntity {
     price: number;
     quantity: number;
     stockCode: string;
+    productName:string;
 }
 
 
@@ -140,11 +141,12 @@ const Trading: React.FC = () => {
                         userId,
                         price,
                         quantity,
-                        stockCode
+                        stockCode,
+                        productName
                 };
                 try {
                     const response = await axios.post(
-                    "http://localhost:8080/api/transaction/buy", data,  // ${tradeType}
+                        `http://localhost:8080/api/transaction/${tradeType}`, data,
                     {
                         headers: {
                             "Content-Type": "application/json",
