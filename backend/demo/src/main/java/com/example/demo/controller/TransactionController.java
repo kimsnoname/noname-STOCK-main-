@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,11 +13,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.model.Transaction;
 import com.example.demo.model.User;
+import com.example.demo.model.UserPortfolio;
+
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.TransactionRepository;
+
 import com.example.demo.service.JwtService;
 import com.example.demo.service.TransactionService;
+import com.example.demo.service.UserPortfolioService;
+
 
 import jakarta.validation.Valid;
+import java.util.Optional;
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/transaction")
@@ -27,10 +37,31 @@ public class TransactionController {
     private TransactionService transactionService;
 
     @Autowired
+    private UserPortfolioService userPortfolioService;
+
+    @Autowired
     private JwtService jwtService;
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @GetMapping("/list")
+    public ResponseEntity<List<Transaction>> showStock(@RequestHeader("Authorization") String token){
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        String userEmail = jwtService.extractUsername(token);
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
+
+        Long userId = user.getUser_id();
+        List<Transaction> transactions = transactionRepository.findTransactionsByUserId(userId);
+
+        return ResponseEntity.ok(transactions);
+    }
 
     @PostMapping("/buy")
     public ResponseEntity<?> handleBuyStock(@RequestHeader("Authorization") String token,
@@ -40,20 +71,36 @@ public class TransactionController {
             String jwt = token.substring(7);
             String userEmail = jwtService.extractUsername(jwt);
             User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
 
             // 토큰이 유효한지 검증
             if (jwtService.isTokenValid(jwt, user)) {
                 // Transaction 생성
-                Transaction transaction = transactionService.createTransaction(
-                    user.getUser_id(),
-                    transactionEntity.getStockCode(),
-                    transactionEntity.getPrice(),
-                    transactionEntity.getQuantity(),
-                    transactionEntity.getProductName()
+                transactionService.createTransaction(
+                        user.getUser_id(),
+                        transactionEntity.getStockCode(),
+                        transactionEntity.getPrice(),
+                        transactionEntity.getQuantity(),
+                        transactionEntity.getProductName()
                 );
 
-                return new ResponseEntity<>(transaction, HttpStatus.CREATED);
+                // UserPortfolio 업데이트
+                Optional<UserPortfolio> optionalPortfolio = userPortfolioService.getUserPortfolio(user.getUser_id(), transactionEntity.getStockCode());
+
+                UserPortfolio userPortfolio;
+                if (optionalPortfolio.isPresent()) {
+                    userPortfolio = optionalPortfolio.get();
+                    userPortfolio.setQuantity(userPortfolio.getQuantity() + transactionEntity.getQuantity());
+                } else {
+                    userPortfolio = new UserPortfolio();
+                    userPortfolio.setUserId(user.getUser_id());
+                    userPortfolio.setStockCode(transactionEntity.getStockCode());
+                    userPortfolio.setQuantity(transactionEntity.getQuantity());
+                }
+
+                userPortfolioService.saveUserPortfolio(userPortfolio);
+
+                return new ResponseEntity<>(userPortfolio, HttpStatus.OK);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
@@ -70,20 +117,37 @@ public class TransactionController {
             String jwt = token.substring(7);
             String userEmail = jwtService.extractUsername(jwt);
             User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
 
             // 토큰이 유효한지 검증
             if (jwtService.isTokenValid(jwt, user)) {
                 // Transaction 삭제
-                Transaction transaction = transactionService.deleteTransaction(
-                    user.getUser_id(),
-                    transactionEntity.getStockCode(),
-                    transactionEntity.getPrice(),
-                    transactionEntity.getQuantity(),
-                    transactionEntity.getProductName()
+                transactionService.deleteTransaction(
+                        user.getUser_id(),
+                        transactionEntity.getStockCode(),
+                        transactionEntity.getPrice(),
+                        transactionEntity.getQuantity(),
+                        transactionEntity.getProductName()
                 );
 
-                return new ResponseEntity<>(transaction, HttpStatus.CREATED);
+                // UserPortfolio 업데이트
+                Optional<UserPortfolio> optionalPortfolio = userPortfolioService.getUserPortfolio(user.getUser_id(), transactionEntity.getStockCode());
+
+                if (optionalPortfolio.isPresent()) {
+                    UserPortfolio userPortfolio = optionalPortfolio.get();
+                    int updatedQuantity = userPortfolio.getQuantity() - transactionEntity.getQuantity();
+
+                    if (updatedQuantity <= 0) {
+                        userPortfolioService.deleteUserPortfolio(userPortfolio);
+                    } else {
+                        userPortfolio.setQuantity(updatedQuantity);
+                        userPortfolioService.saveUserPortfolio(userPortfolio);
+                    }
+                } else {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Stock not found in portfolio.");
+                }
+
+                return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }

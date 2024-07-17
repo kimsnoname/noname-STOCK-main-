@@ -32,14 +32,17 @@ public class PostService {
 
     public Post updatePost(String boardId, Long id, Post postDetails) {
         Post post = postRepository.findByBoardIdAndId(boardId, id).orElse(null);
-        if (post == null) {
-            return null;
+        if (post != null) {
+            post.setTitle(postDetails.getTitle());
+            post.setAuthor(postDetails.getAuthor());
+            post.setDate(postDetails.getDate());
+            post.setContent(postDetails.getContent());
+            post.setViews(postDetails.getViews());
+            post.setComments(postDetails.getComments());
+            // boardName 관련 코드 삭제
+            return postRepository.save(post);
         }
-        post.setTitle(postDetails.getTitle());
-        post.setContent(postDetails.getContent());
-        post.setAuthor(postDetails.getAuthor());
-        // 다른 필드 업데이트
-        return postRepository.save(post);
+        return null;
     }
 
     public void deletePost(String boardId, Long id) {

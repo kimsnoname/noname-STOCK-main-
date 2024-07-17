@@ -50,6 +50,7 @@ const Trading: React.FC = () => {
     const [productName, setProductName] = useState<string>('삼성전자');
     const [price, setPrice] = useState<number | null>(null);
     const [quantity, setQuantity] = useState<number | null>(null);
+    const [userQuantity, setUserQuantity] = useState<number | null>(null);
     const [stockCode, setStockCode] = useState<string>('005930'); // 기본값을 '005930'으로 설정
     const [chartVisible, setChartVisible] = useState<boolean>(true);
     const [jobDate, setJobDate] = useState<string>('');
@@ -81,6 +82,28 @@ const Trading: React.FC = () => {
 
         return () => clearInterval(interval);
     }, [stockCode]);
+    
+    useEffect(() => {
+        const fetchUserQuantity = async () => {
+            setUserQuantity(0);
+            try {
+                const token = localStorage.getItem('token'); // 로컬 스토리지에서 JWT 토큰 가져오기
+                const response = await axios.get<{ quantity: number }>(`http://localhost:8080/api/user/stock/${stockCode}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                setUserQuantity(response.data.quantity);
+            } catch (error) {
+                console.error('Error fetching user quantity:', error);
+            }
+        };
+
+        if (stockCode) {
+            fetchUserQuantity();
+        }
+    }, [stockCode]);
+
 
     const calculateVolume = (data: StockData) => {
         // Sell orders의 quantity 합계 계산
@@ -107,8 +130,8 @@ const Trading: React.FC = () => {
       };
 
     const handlePasswordSubmit = async () => {
-        if (!price || !quantity || !accountPassword) {
-            alert('모든 필드를 입력해 주세요.');
+        if (!accountPassword) {
+            alert('계좌번호를 확인해 주세요.');
             return;
           }
 
@@ -156,7 +179,7 @@ const Trading: React.FC = () => {
                     );
                     console.log("거래 성공: ", response.data);
                     console.log(response.status);
-                    if (response.status === 201) {
+                    if (response.status === 200) {
                         alert('거래가 성공적으로 완료되었습니다.');
                         navigate("/trading");
                     } else {
@@ -188,6 +211,9 @@ const Trading: React.FC = () => {
     };
 }
 
+
+    const canSell = quantity !== null && userQuantity !== null && quantity <= userQuantity;
+
     const handlePriceClick = (selectedPrice: number) => {
         setPrice(selectedPrice);
     };
@@ -195,6 +221,24 @@ const Trading: React.FC = () => {
     const handleSearch = () => {
         if (stockCode) {
             setStockCode(stockCode); // 입력된 종목 코드로 업데이트
+        }
+        const fetchUserQuantity = async () => {
+            setUserQuantity(0);
+            try {
+                const token = localStorage.getItem('token'); // 로컬 스토리지에서 JWT 토큰 가져오기
+                const response = await axios.get<{ quantity: number }>(`http://localhost:8080/api/user/stock/${stockCode}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                setUserQuantity(response.data.quantity);
+            } catch (error) {
+                console.error('Error fetching user quantity:', error);
+            }
+        };
+
+        if (stockCode) {
+            fetchUserQuantity();
         }
     };
 
@@ -407,7 +451,7 @@ const Trading: React.FC = () => {
                                         <div>
                                             <Card>
                                             <Input
-                                                placeholder="가격"
+                                                placeholder="가격 (호가창에서 선택)"
                                                 type="number"
                                                 value={price !== null ? price : ''}
                                                 onChange={(e) => setPrice(parseFloat(e.target.value))}
@@ -421,7 +465,27 @@ const Trading: React.FC = () => {
                                                 style={{ width: '100%', marginBottom: '10px' }}
                                             />
                                             <Button type="primary" onClick={() => { setTradeType('buy'); setVisible(true); }} block>매수</Button>
-                                            <Button type="danger" onClick={() => { setTradeType('sell'); setVisible(true); }} block>매도</Button>
+                                            </Card>
+                                            
+                                            <Card>
+                                                <Input
+                                                    placeholder="가격"
+                                                    type="number"
+                                                    value={stockData.current_price}
+                                                    readOnly
+                                                    style={{ width: '100%', marginBottom: '10px' }}
+                                                />
+                                                <Input
+                                                    placeholder={userQuantity !== null ? `수량 (보유: ${userQuantity})` : '수량'}
+                                                    type="number"
+                                                    value={quantity !== null ? quantity : ''}
+                                                    onChange={(e) => setQuantity(parseFloat(e.target.value))}
+                                                    style={{ width: '100%', marginBottom: '10px' }}
+                                                />
+                                                <div style={{ marginBottom: '10px' }}>
+                                                    {userQuantity !== null && <span>보유 수량: {userQuantity} 개</span>}
+                                                </div>
+                                                <Button type="primary" onClick={() => { setPrice(stockData.current_price); setTradeType('sell'); setVisible(true); }} disabled={!canSell} block>매도</Button>
                                             </Card>
                                         </div>
                                     ) : (
@@ -517,7 +581,7 @@ const Trading: React.FC = () => {
                       block
                       onClick={() => {
                         if (item === "Submit") {
-                          handlePasswordSubmit();
+                        handlePasswordSubmit();
                         } else if (item === "Backspace") {
                           handleBackspace();
                         } else {

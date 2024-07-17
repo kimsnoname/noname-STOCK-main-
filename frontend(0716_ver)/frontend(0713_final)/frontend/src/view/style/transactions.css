@@ -122,3 +122,11 @@
     display: none;
   }
 }
+
+.buy-row {
+  background-color: #ffcccc; /* 빨간색 배경 */
+}
+
+.sell-row {
+  background-color: #cce5ff; /* 파란색 배경 */
+}

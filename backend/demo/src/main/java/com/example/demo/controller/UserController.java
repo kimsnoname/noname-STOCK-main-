@@ -2,11 +2,13 @@ package com.example.demo.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -17,8 +19,10 @@ import com.example.demo.dto.AuthenticationRequest;
 import com.example.demo.dto.AuthenticationResponse;
 import com.example.demo.model.User;
 import com.example.demo.model.UserCreateForm;
+import com.example.demo.model.UserPortfolio;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.JwtService;
+import com.example.demo.service.UserPortfolioService;
 import com.example.demo.service.UserService;
 
 import jakarta.validation.Valid;
@@ -32,6 +36,7 @@ public class UserController {
     private final UserService userService;
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final UserPortfolioService userPortfolioService;
 
     @PostMapping("/register")
     public ResponseEntity<Object> saveUser(@RequestBody @Valid UserCreateForm userCreateForm) {
@@ -86,5 +91,27 @@ public class UserController {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
         return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/stock/{stockCode}")
+    public ResponseEntity<?> getUserStockQuantity(
+            @PathVariable String stockCode,
+            @RequestHeader("Authorization") String token) {
+
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        String userEmail = jwtService.extractUsername(token);
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
+
+        Optional<UserPortfolio> userPortfolio = userPortfolioService.getUserPortfolio(user.getUser_id(), stockCode);
+
+        if (userPortfolio.isPresent()) {
+            return ResponseEntity.ok(userPortfolio.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
