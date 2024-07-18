@@ -149,7 +149,7 @@ const Transfer: React.FC = () => {
   };
 
   const handlePasswordInput = (value: string) => {
-    if (accountPassword.length < 4) {
+    if (accountPassword.length < 6) {
       setAccountPassword(accountPassword + value);
     }
   };
@@ -160,8 +160,8 @@ const Transfer: React.FC = () => {
 
   const handlePasswordSubmit = async () => {
     // const userId = 22;
-    if (accountPassword.length !== 4) {
-      message.error("비밀번호는 4자리여야 합니다.");
+    if (accountPassword.length !== 6) {
+      message.error("비밀번호는 6자리여야 합니다.");
       return;
     }
     try {
@@ -567,7 +567,7 @@ const Transfer: React.FC = () => {
         >
           <div className="modal-content">
             <div className="password-dots">
-              {Array(4)
+              {Array(6)
                 .fill(0)
                 .map((_, i) => (
                   <div
