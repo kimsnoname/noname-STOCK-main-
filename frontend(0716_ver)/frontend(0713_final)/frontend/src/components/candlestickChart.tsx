@@ -11,13 +11,13 @@ const Section = styled.section`
 `;
 
 /** 빨간색과 파란색으로 표시되는 캔들 차트를 출력하는 컴포넌트입니다 */
-const CandlestickChart = ({ stockCode, width }) => {
+const CandlestickChart = ({ stockCode, width, dataUrl }) => {
   const [stockData, setStockData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:5002/stock/api/stock_data?code=${stockCode}`);
+        const response = await fetch(`${dataUrl}?code=${stockCode}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -36,7 +36,7 @@ const CandlestickChart = ({ stockCode, width }) => {
     };
 
     fetchData();
-  }, [stockCode]);
+  }, [stockCode, dataUrl]);
 
   const dataList = stockData.map(el => ({
     x: el.date,

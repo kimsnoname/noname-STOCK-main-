@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 설정 활성화
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/user/**","/api/account/create/**","api/posts/**").permitAll()
+                        .requestMatchers("/api/user/**","/api/account/create/**","api/posts/**","api/redirect/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(httpSecuritySessionManagementConfigurer ->
                         httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

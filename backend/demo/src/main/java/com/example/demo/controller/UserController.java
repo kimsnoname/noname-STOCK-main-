@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.AuthenticationRequest;
@@ -21,6 +22,7 @@ import com.example.demo.model.User;
 import com.example.demo.model.UserCreateForm;
 import com.example.demo.model.UserPortfolio;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.ImageService;
 import com.example.demo.service.JwtService;
 import com.example.demo.service.UserPortfolioService;
 import com.example.demo.service.UserService;
@@ -37,6 +39,8 @@ public class UserController {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final UserPortfolioService userPortfolioService;
+    private final ImageService imageService;
+
 
     @PostMapping("/register")
     public ResponseEntity<Object> saveUser(@RequestBody @Valid UserCreateForm userCreateForm) {
@@ -113,5 +117,10 @@ public class UserController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/image")
+    public String getImage(@RequestParam String productName) {
+        return imageService.getImageAsBase64(productName);
     }
 }

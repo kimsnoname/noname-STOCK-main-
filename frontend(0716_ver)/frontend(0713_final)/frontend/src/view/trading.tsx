@@ -58,6 +58,9 @@ const Trading: React.FC = () => {
 	const [attempts, setAttempts] = useState(0);
 	const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
 	const [visible, setVisible] = useState(false);
+	// const [url, setUrl] = useState<string>('');
+	const [imageSrc, setImageSrc] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(null);
 	const navigate = useNavigate();
 
 
@@ -103,6 +106,41 @@ const Trading: React.FC = () => {
 			fetchUserQuantity();
 		}
 	}, [stockCode]);
+
+	useEffect(() => {
+		const fetchImage = async () => {
+		  try {
+			// 제품 이름을 영어로 변환
+			const translatedName = convertToEnglish(productName);
+			
+			// 이미지 URL 생성
+			const response = await axios.get(`http://localhost:8080/api/user/image?productName=${translatedName}`);
+			
+			// Base64 형식의 이미지 데이터
+			const base64Image = response.data;
+			setImageSrc(`data:image/png;base64,${base64Image}`);
+			setError(null);
+		  } catch (err) {
+			setImageSrc(null);
+			setError('이미지를 불러오는 데 실패했습니다.');
+		  }
+		};
+	
+		fetchImage();
+	  }, [productName]);
+
+
+	// 제품 이름을 영어로 변환하는 함수
+	const convertToEnglish = (name: string) => {
+		const translations: { [key: string]: string } = {
+		'삼성전자': 'samsung',
+		'SK하이닉스': 'skhynix',
+		'에스트래픽': 'straffic',
+		// 다른 제품 이름 매핑 추가
+		};
+
+		return translations[name] || name;
+	};
 
 
 	const calculateVolume = (data: StockData) => {
@@ -246,6 +284,39 @@ const Trading: React.FC = () => {
 		setChartVisible(!chartVisible);
 	};
 
+    // const handleSetNaverUrl = () => {
+    //     const naverUrl = `https://finance.naver.com/item/news.naver?code=${stockCode}`;
+    //     setUrl(naverUrl);
+    // };
+
+    // const handleSetDaumUrl = () => {
+    //     const daumUrl = `https://finance.daum.net/quotes/A${stockCode}#news/stock`;
+    //     setUrl(daumUrl);
+    // };
+
+    // const handleOpenUrl = async () => {
+    //     try {
+    //         if (!url) {
+    //             message.error('URL이 비어 있습니다.');
+    //             return;
+    //         }
+
+	// 		// API 호출을 통해 서버에 URL 리디렉션 요청
+	// 		const response = await axios.get('http://localhost:8080/api/redirect', {
+	// 			params: {
+	// 				url
+	// 			}
+	// 		});
+
+	// 		// 성공적인 응답 처리, 예를 들어 사용자에게 알림 표시
+	// 		message.success('페이지가 새 탭에서 열렸습니다.');
+	// 	} catch (error) {
+	// 		console.error('Error opening URL:', error);
+	// 		message.error('URL을 열 수 없습니다.');
+	// 	}
+	// };
+
+
 	if (!stockData) {
 		return <p>Loading...</p>;
 	}
@@ -267,14 +338,26 @@ const Trading: React.FC = () => {
 									{!isMobile ? (
 										<Col span={6}>
 											<Card className="price-info" bordered={true} size="small" style={{ width: '100%', height: '100px', display: 'flex', alignItems: 'left', textAlign: 'left', justifyContent: 'left' }}>
-												<Title level={5} style={{ marginTop: 0, marginBottom: '-30px', marginLeft: '10px', color: '#C94077', fontWeight: "bold" }}>{productName}</Title>
-												<Title level={3} style={{ marginBottom: '-21px', marginLeft: '10px' }}>{stockData.current_price}원</Title>
-												{/* <Title level={5} style={{marginTop:'-15px', textSizeAdjust:10}}>{jobDate}</Title> */}
-												<span style={{ fontSize: '15px', marginLeft: '10px' }}>{jobDate}</span>
+												{/* 카드 내부 Flexbox로 이미지와 텍스트를 좌우 정렬 */}
+												<div style={{ flexShrink: 0, marginRight: '10px' }}>
+												{imageSrc ? (
+													<img src={imageSrc} alt={stockCode} style={{ width: '80px', height: '80px', objectFit: 'cover' }} />
+												) : (
+													<div style={{ width: '80px', height: '80px', backgroundColor: '#f0f0f0' }}>이미지를 로딩 중입니다...</div>
+												)}
+												{error && <div className="error">{error}</div>}
+												</div>
+												<div style={{ flex: 1 }}>
+												<Title level={5} style={{ marginTop: 0, marginBottom: '-10px', color: '#C94077', fontWeight: "bold" }}>
+													{productName}
+												</Title>
+												<Title level={3} style={{ marginBottom: '-10px' }}>{stockData.current_price}원</Title>
+												<span style={{ fontSize: '15px' }}>{jobDate}</span>
+												</div>
 											</Card>
 										</Col>
 									) : (
-										<Col span={24}>
+										<Col span={24}>										
 											<Card className="price-info" bordered={true} size="small" style={{ width: cardSize, height: '100px', display: 'flex', alignItems: 'left', textAlign: 'left', justifyContent: 'left' }}>
 												<Title level={5} style={{ marginTop: 0, marginBottom: '-30px', marginLeft: '10px', color: '#C94077', fontWeight: "bold" }}>{productName}</Title>
 												<Title level={3} style={{ marginBottom: '-21px', marginLeft: '10px' }}>{stockData.current_price}원</Title>
@@ -371,15 +454,16 @@ const Trading: React.FC = () => {
 								</Row>
 							</div>
 
+
 							{chartVisible && (
 								<div className="sub-container-2">
 									{!isMobile ? (
 										<Card style={{ width: '89.5%', height: '80%', display: 'flex' }}>
-											<CandlestickChart stockCode={stockCode} width={800} />
+                                            <CandlestickChart stockCode={stockCode} dataUrl={`http://localhost:5002/stock/api/stock_data`} width={800}/>
 										</Card>
 									) : (
 										<Card style={{ width: cardSize, height: '80%', display: 'flex' }}>
-											<CandlestickChart stockCode={stockCode} width={cardSize - 50} />
+                                            <CandlestickChart stockCode={stockCode} dataUrl={`http://localhost:5002/stock/api/stock_data`} width={cardSize-50}/>
 										</Card>
 									)}
 								</div>
